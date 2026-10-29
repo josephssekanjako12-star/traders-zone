@@ -21,10 +21,11 @@ app.secret_key = 'traders_zone_secret_key_2026'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 def get_db_connection():
-    conn = sqlite3.connect('traderszone.db', timeout=20)
+    # Use /data folder on Render, or local folder on iSH
+    db_path = '/data/traderszone.db' if os.environ.get('RENDER') else 'traderszone.db'
+    conn = sqlite3.connect(db_path, timeout=20)
     conn.row_factory = sqlite3.Row 
     return conn
-
 
 @app.before_request
 def update_last_seen():
