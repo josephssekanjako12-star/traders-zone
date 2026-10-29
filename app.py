@@ -1084,6 +1084,28 @@ def reset_password():
         return redirect(url_for('login'))
     return render_template('reset_password.html')
 
+    # --- AUTO INITIALIZE DATABASE ON RENDER ---
+with app.app_context():
+    conn = get_db_connection()
+    # Create Users table
+    conn.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, bio TEXT DEFAULT 'Forex & Crypto Trader', avatar_path TEXT, name TEXT, email TEXT, last_seen DATETIME)''')
+    # Create Posts table
+    conn.execute('''CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, content TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, image_path TEXT, views INTEGER DEFAULT 0)''')
+    # Create other tables (Likes, Comments, Bookmarks, Follows, Notifications, Messages, Groups, etc.)
+    conn.execute('''CREATE TABLE IF NOT EXISTS likes (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, post_id INTEGER NOT NULL)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER NOT NULL, user_id INTEGER NOT NULL, text_content TEXT, image_path TEXT, sticker TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS comment_likes (id INTEGER PRIMARY KEY AUTOINCREMENT, comment_id INTEGER, user_id INTEGER)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS bookmarks (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, post_id INTEGER)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS follows (id INTEGER PRIMARY KEY AUTOINCREMENT, follower_id INTEGER, following_id INTEGER)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS post_views (id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER, user_id INTEGER)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, sender_id INTEGER, type TEXT, post_id INTEGER, is_read INTEGER DEFAULT 0, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, sender_id INTEGER, receiver_id INTEGER, content TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, image_paths TEXT, is_read INTEGER DEFAULT 0, reply_to_id INTEGER, is_edited INTEGER DEFAULT 0)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, creator_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, avatar_path TEXT)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS group_members (group_id INTEGER, user_id INTEGER, last_read_message_id INTEGER DEFAULT 0)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS group_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER, sender_id INTEGER, content TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, image_paths TEXT, reply_to_id INTEGER, is_edited INTEGER DEFAULT 0)''')
+    conn.commit()
+    conn.close()
+
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 8080)) # Use PORT env var or 8080 locally
