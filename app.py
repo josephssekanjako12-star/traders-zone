@@ -18,7 +18,13 @@ def allowed_file(filename):
 
 app = Flask(__name__)
 app.secret_key = 'traders_zone_secret_key_2026'
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+if os.environ.get('RENDER'):
+    # On Render, use the persistent disk for uploads
+    app.config['UPLOAD_FOLDER'] = '/data/uploads'
+    os.makedirs('/data/uploads', exist_ok=True)
+else:
+    # On your iPhone (iSH)
+    app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 def get_db_connection():
     # Use /data folder on Render, or local folder on iSH
