@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Traders Zone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0a0e17; color: #e1e1e1; font-family: Arial, sans-serif; padding-bottom: 80px; }
+        
+        /* Top Navbar */
+        .navbar { background-color: #111827; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3748; position: sticky; top: 0; z-index: 10; }
+        .logo { font-size: 22px; font-weight: bold; color: #00ffaa; text-decoration: none; }
+        .nav-links a { color: #e1e1e1; text-decoration: none; margin-left: 15px; font-size: 14px; }
+        
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background-color: #111827; display: flex; justify-content: space-around;
+            padding: 12px 0; border-top: 1px solid #2d3748; z-index: 1000;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: #a0aec0; text-decoration: none; font-size: 11px; gap: 5px;
+            transition: color 0.2s;
+        }
+        .nav-item i { font-size: 22px; }
+        .nav-item:hover, .nav-item.active { color: #00ffaa; }
+        
+        /* Main Content Area */
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navbar -->
+    <div class="navbar">
+        <div style="display: flex; align-items: center;">
+            {% block nav_left %}
+                <a href="/" class="logo">Traders Zone</a>
+            {% endblock %}
+        </div>
+        
+        <div class="nav-links" style="display: flex; align-items: center; gap: 15px;">
+            {% block nav_right %}
+                {% if not session.get('user_id') %}
+                    <a href="/login">Login</a>
+                    <a href="/register">Register</a>
+                {% endif %}
+            {% endblock %}
+        </div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    {% if session.get('user_id') %}
+    <div class="bottom-nav">
+        <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+            <i class="fa-solid fa-house"></i>
+            <span>Feed</span>
+        </a>
+        
+        <a href="/chats" class="nav-item {% if request.path == '/chats' or request.path.startswith('/chat_room') %}active{% endif %}" style="position: relative;">
+            <i class="fa-solid fa-comment-dots"></i>
+            <span>Chats</span>
+            {% if total_unread > 0 %}
+                <span id="chats-badge" style="position: absolute; top: -5px; right: 15px; background: #ff4d4d; color: white; font-size: 10px; font-weight: bold; border-radius: 10px; padding: 2px 6px;">
+                    {{ total_unread }}
+                </span>
+            {% endif %}
+        </a>
+        
+        <a href="/notifications" class="nav-item {% if request.path == '/notifications' %}active{% endif %}" style="position: relative;">
+            <i class="fa-solid fa-bell"></i>
+            <span>Alerts</span>
+            {% if total_notifs > 0 %}
+                <span id="alerts-badge" style="position: absolute; top: -5px; right: 10px; background: #ff4d4d; color: white; font-size: 10px; font-weight: bold; border-radius: 10px; padding: 2px 6px;">
+                    {{ total_notifs }}
+                </span>
+            {% endif %}
+        </a>
+        
+        <a href="/my_profile" class="nav-item {% if request.path == '/my_profile' or request.path.startswith('/settings') %}active{% endif %}">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+    {% endif %}
+
+    <script>
+        setInterval(function() {
+            fetch('/api/unread_counts')
+       .then(res => res.json())
+                .then(data => {
+                    let chatBadge = document.getElementById('chats-badge');
+                    let alertBadge = document.getElementById('alerts-badge');
+                    
+                    if (data.messages > 0) {
+                        if (!chatBadge) {
+                            let nav = document.querySelector('a[href="/chats"]');
+                            let span = document.createElement('span');
+                            span.id = 'chats-badge';
+                            span.style = 'position: absolute; top: -5px; right: 15px; background: #ff4d4d; color: white; font-size: 10px; font-weight: bold; border-radius: 10px; padding: 2px 6px;';
+                            nav.appendChild(span);
+                            chatBadge = span;
+                        }
+                        chatBadge.innerText = data.messages;
+                    } else if (chatBadge) { chatBadge.remove(); }
+
+                    if (data.notifications > 0) {
+                        if (!alertBadge) {
+                            let nav = document.querySelector('a[href="/notifications"]');
+                            let span = document.createElement('span');
+                            span.id = 'alerts-badge';
+                            span.style = 'position: absolute; top: -5px; right: 10px; background: #ff4d4d; color: white; font-size: 10px; font-weight: bold; border-radius: 10px; padding: 2px 6px;';
+                            nav.appendChild(span);
+                            alertBadge = span;
+                        }
+                        alertBadge.innerText = data.notifications;
+                    } else if (alertBadge) { alertBadge.remove(); }
+                });
+        }, 5000);
+    </script>
+</body>
+</html>

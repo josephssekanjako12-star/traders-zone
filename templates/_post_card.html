@@ -1,0 +1,52 @@
+{% for post in posts %}
+<div class="post-card">
+    <div class="post-header">
+        <div class="header-left">
+            {% if post.avatar_path %}
+                <img src="/{{ post.avatar_path }}" class="avatar-img">
+            {% else %}
+                <div class="avatar-text">{{ post.username[0] }}</div>
+            {% endif %}
+            
+            <div class="user-details">
+                <div class="username">@{{ post.username }}</div>
+                <div class="timestamp">{{ post.timestamp | local_time('%b %d, %H:%M') }}</div>
+            </div>
+        </div>
+
+        <!-- Follow Icon -->
+        {% if post.username != session['user_id'] %}
+            {% if not post.is_following %}
+                <a href="/follow/{{ post.username }}" style="background: transparent; color: #00ffaa; border: 1px solid #00ffaa; padding: 6px 10px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-plus"></i>
+                </a>
+            {% else %}
+                <a href="/follow/{{ post.username }}" style="background: #00ffaa; color: #0a0e17; border: 1px solid #00ffaa; padding: 6px 10px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-check"></i>
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <a href="/post/{{ post.id }}" class="post-link">
+        <div class="post-content">{{ post.content | linkify }}</div>
+        {% if post.image_path %}
+            <img src="/{{ post.image_path }}" class="post-image">
+        {% endif %}
+    </a>
+    
+    <div class="post-actions">
+        <a href="/like/{{ post.id }}" class="action-btn"><i class="fa-solid fa-heart"></i> {{ post.like_count }}</a>
+        <a href="/post/{{ post.id }}" class="action-btn"><i class="fa-solid fa-comment"></i> {{ post.comment_count }}</a>
+        <span class="action-btn"><i class="fa-solid fa-eye"></i> {{ post.views }}</span>
+        
+        <a href="/bookmark/{{ post.id }}" class="action-btn" style="margin-left: auto;">
+            {% if post.is_bookmarked %}
+                <i class="fa-solid fa-bookmark" style="color: #00ffaa;"></i>
+            {% else %}
+                <i class="fa-regular fa-bookmark"></i>
+            {% endif %}
+        </a>
+    </div>
+</div>
+{% endfor %}

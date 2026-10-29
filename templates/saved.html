@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block nav_left %}
+    <a href="/settings" style="color: #00ffaa; text-decoration: none; margin-right: 15px; font-size: 20px;"><i class="fa-solid fa-arrow-left"></i></a>
+    <span style="font-size: 20px; font-weight: bold; color: #e1e1e1;">Saved Posts</span>
+{% endblock %}
+
+{% block nav_right %}{% endblock %}
+
+{% block content %}
+
+<style>
+    .post-card { background-color: #111827; padding: 20px; border-radius: 10px; border: 1px solid #2d3748; margin-bottom: 15px; display: flex; flex-direction: column; width: 100%; }
+    .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%; }
+    .header-left { display: flex; align-items: center; }
+    .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #2d3748; }
+    .avatar-text { width: 45px; height: 45px; border-radius: 50%; background-color: #00ffaa; color: #0a0e17; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 12px; text-transform: uppercase; flex-shrink: 0; }
+    .user-details { display: flex; flex-direction: column; }
+    .username { color: #00ffaa; font-weight: bold; font-size: 16px; }
+    .timestamp { color: #a0aec0; font-size: 12px; }
+    .post-link { display: block; text-decoration: none; color: inherit; width: 100%; }
+    .post-content { line-height: 1.6; font-size: 16px; white-space: pre-wrap; margin-bottom: 15px; width: 100%; word-wrap: break-word; }
+    .post-image { width: 100%; border-radius: 10px; margin-bottom: 15px; border: 1px solid #2d3748; display: block; }
+    .post-actions { display: flex; gap: 25px; border-top: 1px solid #2d3748; padding-top: 15px; color: #a0aec0; width: 100%; align-items: center;}
+    .action-btn { display: flex; align-items: center; gap: 6px; font-size: 14px; text-decoration: none; color: inherit; }
+    .action-btn:hover { color: #00ffaa; }
+</style>
+
+<div class="container">
+    {% for post in posts %}
+        <div class="post-card">
+            <div class="post-header">
+                <div class="header-left">
+                    {% if post.avatar_path %}
+                        <img src="/{{ post.avatar_path }}" class="avatar-img">
+                    {% else %}
+                        <div class="avatar-text">{{ post.username[0] }}</div>
+                    {% endif %}
+                    
+                    <div class="user-details">
+                        <div class="username">@{{ post.username }}</div>
+                        <div class="timestamp">{{ post.timestamp | local_time('%b %d, %H:%M') }}</div>
+                    </div>
+                </div>
+
+                {% if post.username != session['user_id'] %}
+                    {% if not post.is_following %}
+                        <a href="/follow/{{ post.username }}" style="background: transparent; color: #00ffaa; border: 1px solid #00ffaa; padding: 6px 10px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-plus"></i>
+                        </a>
+                    {% else %}
+                        <a href="/follow/{{ post.username }}" style="background: #00ffaa; color: #0a0e17; border: 1px solid #00ffaa; padding: 6px 10px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-check"></i>
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <a href="/post/{{ post.id }}" class="post-link">
+                <div class="post-content">{{ post.content | linkify }}</div>
+                {% if post.image_path %}
+                    <img src="/{{ post.image_path }}" class="post-image">
+                {% endif %}
+            </a>
+            
+            <div class="post-actions">
+                <a href="/like/{{ post.id }}" class="action-btn"><i class="fa-solid fa-heart"></i> {{ post.like_count }}</a>
+                <a href="/post/{{ post.id }}" class="action-btn"><i class="fa-solid fa-comment"></i> {{ post.comment_count }}</a>
+                <span class="action-btn"><i class="fa-solid fa-eye"></i> {{ post.views }}</span>
+                
+                <a href="/bookmark/{{ post.id }}" class="action-btn" style="margin-left: auto;">
+                    {% if post.is_bookmarked %}
+                        <i class="fa-solid fa-bookmark" style="color: #00ffaa;"></i>
+                    {% else %}
+                        <i class="fa-regular fa-bookmark"></i>
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <div style="text-align: center; margin-top: 50px; color: #a0aec0;">
+            <i class="fa-regular fa-bookmark" style="font-size: 50px; margin-bottom: 15px;"></i>
+            <p>You haven't saved any posts yet.</p>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block nav_left %}
+    <a href="/my_profile" style="color: #00ffaa; text-decoration: none; margin-right: 15px; font-size: 20px;"><i class="fa-solid fa-arrow-left"></i></a>
+    <span style="font-size: 20px; font-weight: bold; color: #00ffaa;">Settings</span>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 20px; max-width: 600px; margin: 0 auto; padding: 20px;">
+    
+    <h2 style="color: #e1e1e1; margin-bottom: 20px; font-size: 20px;">Edit Profile</h2>
+
+    <!-- Avatar Upload -->
+    <div style="text-align: center; margin-bottom: 30px;">
+        <form method="POST" action="/update_profile" enctype="multipart/form-data">
+            <label for="avatar-upload" style="cursor: pointer; display: inline-block; position: relative;">
+                {% if user['avatar_path'] %}
+                    <img src="/{{ user['avatar_path'] }}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #00ffaa;">
+                {% else %}
+                    <div style="width: 120px; height: 120px; background-color: #00ffaa; color: #0a0e17; font-size: 50px; font-weight: bold; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto; border: 3px solid #00ffaa;">
+                        {{ user['username'][0] | upper }}
+                    </div>
+                {% endif %}
+                
+                <div style="position: absolute; bottom: 5px; right: 5px; background: #111827; border-radius: 50%; padding: 8px; border: 1px solid #00ffaa;">
+                    <i class="fa-solid fa-camera" style="color: #00ffaa; font-size: 16px;"></i>
+                </div>
+                <input type="file" name="avatar" id="avatar-upload" style="display: none;" onchange="this.form.submit()">
+            </label>
+        </form>
+   <p style="color: #a0aec0; font-size: 12px; margin-top: 10px;">Tap the camera to change your profile picture</p>
+    </div>
+    <!-- Bio Editor -->
+    <form method="POST" action="/update_profile" style="background: #111827; padding: 20px; border-radius: 10px; border: 1px solid #2d3748;">
+        <label style="color: #a0aec0; font-size: 14px; font-weight: bold; display: block; margin-bottom: 8px;">Your Bio</label>
+        <textarea name="bio" style="width: 100%; background: #0a0e17; color: white; border: 1px solid #2d3748; border-radius: 8px; padding: 12px; resize: none; font-family: Arial; font-size: 15px; height: 100px; outline: none;">{{ user['bio'] }}</textarea>
+        <button type="submit" style="margin-top: 15px; background: #00ffaa; color: #0a0e17; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%;">Save Changes</button>
+    </form>
+    <!-- Saved Posts Link -->
+    <a href="/saved" style="display: flex; justify-content: space-between; align-items: center; background: #111827; padding: 20px; border-radius: 10px; border: 1px solid #2d3748; margin-top: 20px; text-decoration: none; color: inherit;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <i class="fa-solid fa-bookmark" style="color: #00ffaa; font-size: 24px;"></i>
+            <div>
+                <div style="font-size: 16px; font-weight: bold;">Saved Posts</div>
+                <div style="font-size: 12px; color: #a0aec0;">{{ saved_count }} posts bookmarked</div>
+            </div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color: #a0aec0;"></i>
+    </a>    
+
+     <!-- Social Stats & Lists -->
+    <div style="background: #111827; padding: 20px; border-radius: 10px; border: 1px solid #2d3748; margin-top: 20px;">
+        <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 20px;">
+            <div>
+                <div style="font-size: 20px; font-weight: bold; color: #00ffaa;">{{ followers|length }}</div>
+                <div style="font-size: 12px; color: #a0aec0;">Followers</div>
+            </div>
+            <div>
+                <div style="font-size: 20px; font-weight: bold; color: #00ffaa;">{{ following|length }}</div>
+                <div style="font-size: 12px; color: #a0aec0;">Following</div>
+            </div>
+        </div>
+
+        <!-- Followers List Toggle -->
+        <details style="margin-bottom: 10px;">
+            <summary style="cursor: pointer; color: #e1e1e1; font-weight: bold; font-size: 14px; padding: 10px; background: #0a0e17; border-radius: 8px;">View Followers</summary>
+            <div style="margin-top: 10px; max-height: 200px; overflow-y: auto;">
+                {% for f in followers %}
+                    <a href="/user/{{ f.username }}" style="display: flex; align-items: center; padding: 8px; text-decoration: none; color: inherit; border-bottom: 1px solid #2d3748;">
+                        {% if f.avatar_path %}
+                            <img src="/{{ f.avatar_path }}" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px;">
+                        {% else %}
+                            <div style="width: 30px; height: 30px; border-radius: 50%; background: #00ffaa; color: #0a0e17; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; margin-right: 10px;">{{ f.username[0] | upper }}</div>
+                        {% endif %}
+                        <span style="font-size: 14px;">@{{ f.username }}</span>
+                    </a>
+                {% else %}
+                    <p style="color: #a0aec0; font-size: 12px; padding: 10px;">No followers yet.</p>
+                {% endfor %}
+            </div>
+        </details>
+
+        <!-- Following List Toggle -->
+        <details>
+            <summary style="cursor: pointer; color: #e1e1e1; font-weight: bold; font-size: 14px; padding: 10px; background: #0a0e17; border-radius: 8px;">View Following</summary>
+            <div style="margin-top: 10px; max-height: 200px; overflow-y: auto;">
+                {% for f in following %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid #2d3748;">
+                        <a href="/user/{{ f.username }}" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+                            {% if f.avatar_path %}
+                                <img src="/{{ f.avatar_path }}" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px;">
+                            {% else %}
+                                <div style="width: 30px; height: 30px; border-radius: 50%; background: #00ffaa; color: #0a0e17; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; margin-right: 10px;">{{ f.username[0] | upper }}</div>
+                            {% endif %}
+                            <span style="font-size: 14px;">@{{ f.username }}</span>
+                        </a>
+                        <!-- Unfollow Button -->
+                        <a href="/follow/{{ f.username }}" style="color: #ff4d4d; font-size: 12px; text-decoration: none; border: 1px solid #ff4d4d; padding: 2px 8px; border-radius: 10px;">Unfollow</a>
+                    </div>
+                {% else %}
+                    <p style="color: #a0aec0; font-size: 12px; padding: 10px;">You aren't following anyone yet.</p>
+                {% endfor %}
+            </div>
+        </details>
+    </div>
+
+    <!-- Logout Button -->
+    <a href="/logout" style="display: block; text-align: center; margin-top: 30px; background: rgba(255, 77, 77, 0.1); color: #ff4d4d; padding: 15px; text-decoration: none; border-radius: 10px; border: 1px solid #ff4d4d; font-weight: bold;">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+    </a>
+
+</div>
+{% endblock %}

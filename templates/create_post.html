@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block nav_left %}
+    <!-- Back arrow to the feed -->
+    <a href="/" style="color: #00ffaa; text-decoration: none; margin-right: 15px; font-size: 20px;"><i class="fa-solid fa-arrow-left"></i></a>
+    <span style="font-size: 20px; font-weight: bold; color: #e1e1e1;">New Post</span>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .create-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .create-form { background-color: #111827; padding: 25px; border-radius: 15px; border: 1px solid #2d3748; }
+    .create-form h2 { color: #00ffaa; margin-bottom: 20px; font-size: 22px; }
+    .create-form textarea { width: 100%; height: 120px; padding: 15px; border-radius: 10px; border: 1px solid #2d3748; background-color: #0a0e17; color: white; resize: none; font-family: Arial, sans-serif; font-size: 16px; margin-bottom: 15px; }
+    .create-form input[type="file"] { color: #a0aec0; margin-bottom: 20px; width: 100%; }
+    .submit-btn { background-color: #00ffaa; color: #0a0e17; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; }
+</style>
+
+<div class="create-container">
+    <div class="create-form">
+        <h2>Create a Post</h2>
+        <form method="POST" action="/create_post" enctype="multipart/form-data">
+            
+            <textarea name="content" placeholder="Share your market analysis..."></textarea>
+            
+            <!-- File Upload -->
+            <label style="display: block; color: #a0aec0; margin-bottom: 5px; font-size: 14px;"><i class="fa-solid fa-image"></i> Attach a chart or photo (Optional)</label>
+            <input type="file" name="post_image" accept="image/*">
+            
+            <button type="submit" class="submit-btn">
+                <i class="fa-solid fa-paper-plane"></i> Post to Feed
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

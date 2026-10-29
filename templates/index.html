@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block nav_right %}
+    {% if session.get('user_id') %}
+        <a href="/trending" style="font-size: 20px; color: #a0aec0; margin-right: 15px;"><i class="fa-solid fa-fire"></i></a>
+        <a href="/search" style="font-size: 20px; color: #a0aec0;"><i class="fa-solid fa-magnifying-glass"></i></a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Floating "New Posts" Banner -->
+<a href="/" id="new-posts-banner" style="display: none; position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #00ffaa; color: #0a0e17; padding: 10px 20px; border-radius: 20px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 15px rgba(0, 255, 170, 0.4); z-index: 2000; text-align: center; width: max-content;">
+    <i class="fa-solid fa-arrow-up"></i> Show new posts
+</a>
+
+<style>
+    .post-card { background-color: #111827; padding: 20px; border-radius: 10px; border: 1px solid #2d3748; margin-bottom: 15px; display: flex; flex-direction: column; width: 100%; }
+    .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%; }
+    .header-left { display: flex; align-items: center; }
+    .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #2d3748; }
+    .avatar-text { width: 45px; height: 45px; border-radius: 50%; background-color: #00ffaa; color: #0a0e17; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 12px; text-transform: uppercase; flex-shrink: 0; }
+    .user-details { display: flex; flex-direction: column; }
+    .username { color: #00ffaa; font-weight: bold; font-size: 16px; }
+    .timestamp { color: #a0aec0; font-size: 12px; }
+    .post-link { display: block; text-decoration: none; color: inherit; width: 100%; }
+    .post-content { line-height: 1.6; font-size: 16px; white-space: pre-wrap; margin-bottom: 15px; width: 100%; word-wrap: break-word; }
+    .post-image { width: 100%; border-radius: 10px; margin-bottom: 15px; border: 1px solid #2d3748; display: block; }
+    .post-actions { display: flex; gap: 25px; border-top: 1px solid #2d3748; padding-top: 15px; color: #a0aec0; width: 100%; align-items: center;}
+    .action-btn { display: flex; align-items: center; gap: 6px; font-size: 14px; text-decoration: none; color: inherit; }
+    .action-btn:hover { color: #00ffaa; }
+</style>
+
+<div class="container" id="feed-container">
+    {% include '_post_cards.html' %}
+</div>
+
+<!-- Loading Spinner -->
+<div id="loading-spinner" style="display: none; text-align: center; padding: 20px; color: #00ffaa;">
+    <i class="fa-solid fa-spinner fa-spin" style="font-size: 30px;"></i>
+</div>
+    {% if hashtag %}
+        <h2 style="color: #00ffaa; margin-bottom: 20px;">Posts tagged with {{ hashtag }}</h2>
+    {% endif %}
+
+    {% for post in posts %}
+        <div class="post-card">
+            <div class="post-header">
+                <div class="header-left">
+                    {% if post.avatar_path %}
+                        <img src="/{{ post.avatar_path }}" class="avatar-img">
+                    {% else %}
+                        <div class="avatar-text">{{ post.username[0] }}</div>
+                    {% endif %}
+                    
+                    <div class="user-details">
+                        <div class="username">@{{ post.username }}</div>
+                        <div class="timestamp">{{ post.timestamp | local_time('%b %d, %H:%M') }}</div>
+                    </div>
+                </div>
+
+                <!-- Follow Icon -->
+                {% if post.username != session['user_id'] %}
+                    {% if not post.is_following %}
+                        <a href="/follow/{{ post.username }}" style="background: transparent; color: #00ffaa; border: 1px solid #00ffaa; padding: 6px 10px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-plus"></i>
+                        </a>
+                    {% else %}
+                        <a href="/follow/{{ post.username }}" style="background: #00ffaa; color: #0a0e17; border: 1px solid #00ffaa; padding: 6px 10px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-check"></i>
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <a href="/post/{{ post.id }}" class="post-link">
+                <div class="post-content">{{ post.content | linkify }}</div>
+                {% if post.image_path %}
+                    <img src="/{{ post.image_path }}" class="post-image">
+                {% endif %}
+            </a>
+            
+            <div class="post-actions">
+                <a href="/like/{{ post.id }}" class="action-btn"><i class="fa-solid fa-heart"></i> {{ post.like_count }}</a>
+                <a href="/post/{{ post.id }}" class="action-btn"><i class="fa-solid fa-comment"></i> {{ post.comment_count }}</a>
+                <span class="action-btn"><i class="fa-solid fa-eye"></i> {{ post.views }}</span>
+                
+                <!-- Bookmark Icon -->
+                <a href="/bookmark/{{ post.id }}" class="action-btn" style="margin-left: auto;">
+                    {% if post.is_bookmarked %}
+                        <i class="fa-solid fa-bookmark" style="color: #00ffaa;"></i>
+                    {% else %}
+                        <i class="fa-regular fa-bookmark"></i>
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <p style="text-align: center; color: #a0aec0; margin-top: 20px;">No posts found.</p>
+    {% endfor %}
+</div>
+
+{% if not hashtag %}
+<a href="/create_post" style="position: fixed; bottom: 80px; right: 20px; width: 60px; height: 60px; background-color: #00ffaa; color: #0a0e17; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; box-shadow: 0 4px 10px rgba(0, 255, 170, 0.3); z-index: 1000; text-decoration: none;">
+    <i class="fa-solid fa-plus"></i>
+</a>
+{% endif %}
+
+<script>
+    let currentPage = 1;
+    let isLoading = false;
+
+    window.addEventListener('scroll', () => {
+        // If we are loading, do nothing
+        if (isLoading) return;
+
+        // Check if we are near the bottom of the page
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+            
+            // If we are on a hashtag page, don't infinite scroll (for now)
+            {% if hashtag %} return; {% endif %}
+
+            isLoading = true;
+            currentPage++;
+            document.getElementById('loading-spinner').style.display = 'block';
+
+            // Fetch the next page from the server
+            fetch(`/?page=${currentPage}&ajax=true`)
+                .then(response => response.text())
+                .then(html => {
+                    if (html.trim() === "") {
+                        // No more posts to load
+                        window.removeEventListener('scroll', this);
+                        document.getElementById('loading-spinner').innerHTML = "<p style='color:#a0aec0;'>You're all caught up!</p>";
+                    } else {
+                        document.getElementById('feed-container').insertAdjacentHTML('beforeend', html);
+                        document.getElementById('loading-spinner').style.display = 'none';
+                        isLoading = false;
+                    }
+                });
+        }
+    });
+
+// --- NEW POSTS BANNER LOGIC ---
+    let currentMaxId = 0;
+
+    // Get the ID of the newest post currently on the screen
+    fetch('/api/latest_post_id')
+        .then(res => res.json())
+        .then(data => {
+            currentMaxId = data.latest_id;
+        });
+
+    // Check for new posts every 10 seconds
+    setInterval(() => {
+        fetch('/api/latest_post_id')
+            .then(res => res.json())
+            .then(data => {
+                // If a new post ID is higher than the one we started with, show the banner
+                if (data.latest_id > currentMaxId && currentMaxId !== 0) {
+                    document.getElementById('new-posts-banner').style.display = 'block';
+                }
+            });
+    }, 10000);
+</script>
+
+{% endblock %}

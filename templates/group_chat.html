@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block nav_left %}
+    <a href="/groups" style="color: #00ffaa; text-decoration: none; margin-right: 15px; font-size: 20px;"><i class="fa-solid fa-arrow-left"></i></a>
+    
+    <!-- Clickable Header -->
+    <a href="/group_settings/{{ group.id }}" style="display: flex; align-items: center; text-decoration: none; gap: 10px;">
+        {% if group.avatar_path %}
+            <img src="/{{ group.avatar_path }}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+        {% endif %}
+        <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 18px; font-weight: bold; color: #e1e1e1; line-height: 1.2;">{{ group.name }}</span>
+            <span style="font-size: 12px; color: #a0aec0;">{{ total_members }} members, <span style="color: #00ffaa;">{{ online_count }} online</span></span>
+        </div>
+    </a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .bottom-nav { display: none !important; }
+    body { padding-bottom: 80px; }
+    
+    /* Force vertical stacking */
+    .chat-container { max-width: 600px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+    
+    /* Force full width on rows */
+    .message-row { display: flex; width: 100%; align-items: flex-end; gap: 8px; }
+    .message-row.me { flex-direction: row-reverse; }
+    
+    .chat-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-bottom: 5px; }
+    .chat-avatar-text { width: 30px; height: 30px; border-radius: 50%; background: #00ffaa; color: #0a0e17; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; flex-shrink: 0; margin-bottom: 5px; }
+    
+    /* Contain the bubble */
+    .bubble-wrapper { display: flex; flex-direction: column; max-width: 75%; }
+    .message-row.me .bubble-wrapper { align-items: flex-end; }
+
+    .bubble { padding: 10px 14px; border-radius: 15px; font-size: 15px; line-height: 1.4; word-wrap: break-word; width: fit-content; max-width: 100%; }
+    .bubble.me { background-color: #005c4b; color: white; border-bottom-right-radius: 2px; }
+    .bubble.them { background-color: #202c33; color: white; border-bottom-left-radius: 2px; }
+    
+    .sender-name { font-size: 12px; color: #00ffaa; font-weight: bold; margin-bottom: 4px; }
+    .msg-meta { font-size: 10px; color: #a0aec0; margin-top: 5px; text-align: right; }
+    
+    /* Strict image sizing */
+    .chat-img { max-width: 200px; max-height: 200px; border-radius: 8px; margin-top: 5px; object-fit: cover; display: block; cursor: pointer; border: 1px solid #4a5568; }
+    
+    /* Lightbox */
+    .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; }
+    .lightbox img { max-width: 100%; max-height: 90%; object-fit: contain; }
+    
+    /* Input Bar */
+    .chat-input-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #0a0e17; padding: 10px 15px; border-top: 1px solid #2d3748; z-index: 1000; }
+    .chat-input-form { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; align-items: center; }
+    .chat-input-form input[type="text"] { flex: 1; height: 45px; padding: 0 15px; border-radius: 20px; border: 1px solid #2d3748; background-color: #111827; color: white; font-size: 16px; outline: none; }
+    .send-btn { background-color: #00ffaa; color: #0a0e17; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 16px; cursor: pointer; }
+</style>
+
+<div class="chat-container">
+    {% set ns = namespace(prev_date="") %}
+    {% for msg in messages %}
+        {% set current_date = msg.timestamp | local_time('%Y-%m-%d') %}
+        {% if current_date != ns.prev_date %}
+            <div style="text-align: center; margin: 20px 0; width: 100%;">
+                <span style="background: #1f2c34; color: #a0aec0; font-size: 12px; padding: 5px 12px; border-radius: 15px; font-weight: bold;">
+                    {{ msg.timestamp | local_time('%B %d, %Y') }}
+                </span>
+            </div>
+            {% set ns.prev_date = current_date %}
+        {% endif %}
+
+        <div class="message-row {% if msg.sender_id == my_id %}me{% else %}them{% endif %}">
+            
+            {% if msg.sender_id != my_id %}
+                {% if msg.avatar_path %}
+                    <img src="/{{ msg.avatar_path }}" class="chat-avatar">
+                {% else %}
+                    <div class="chat-avatar-text">{{ msg.username[0] | upper }}</div>
+                {% endif %}
+            {% endif %}
+
+            <div class="bubble-wrapper">
+                <div class="bubble {% if msg.sender_id == my_id %}me{% else %}them{% endif %}"
+                     data-id="{{ msg.id }}" 
+                     data-content="{{ msg.content | escape }}" 
+                     data-is-mine="{{ msg.sender_id == my_id }}"
+                     data-is-admin="{{ creator_id == my_id }}"
+                     onmousedown="startPressTimer(event)" 
+                     ontouchstart="startPressTimer(event)"
+                     onmouseup="cancelPressTimer()" 
+                     onmouseleave="cancelPressTimer()" 
+                     ontouchend="cancelPressTimer()">
+                    
+                    {% if msg.reply_to_id %}
+                        <div style="background: rgba(0,0,0,0.2); border-left: 3px solid #00ffaa; padding: 5px 10px; border-radius: 5px; margin-bottom: 5px; font-size: 12px; color: #a0aec0;">
+                            <span style="font-weight: bold; color: #00ffaa;">@{{ msg.reply_sender }}</span><br>
+                            {{ msg.reply_content }}
+                        </div>
+                    {% endif %}
+
+                    {% if msg.sender_id != my_id %}
+                        <div class="sender-name">@{{ msg.username }}</div>
+                    {% endif %}
+                    
+                    {% if msg.content %}<div class="msg-text">{{ msg.content }}</div>{% endif %}
+                    
+                    {% if msg.image_paths %}
+                        <img src="/{{ msg.image_paths }}" class="chat-img" onclick="openLightbox('/{{ msg.image_paths }}')">
+                    {% endif %}
+
+                    <div class="msg-meta">
+                        {% if msg.is_edited %}<span style="font-size:10px; font-style:italic; margin-right:5px;">(edited)</span>{% endif %}
+                        {{ msg.timestamp | local_time('%H:%M') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Lightbox HTML -->
+<div id="lightbox" class="lightbox" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="">
+</div>
+
+<!-- Long Press Menu -->
+<div id="action-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;" onclick="closeMenu()">
+    <div style="background: #111827; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; gap: 15px; width: 80%; max-width: 300px; border: 1px solid #2d3748;" onclick="event.stopPropagation()">
+        <button class="action-btn" id="reply-btn" onclick="replyToMsg()" style="background: #1f2937; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; text-align: left; display: flex; gap: 10px;"><i class="fa-solid fa-reply"></i> Reply</button>
+        <button class="action-btn" id="edit-btn" onclick="editMsg()" style="background: #1f2937; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; text-align: left; display: flex; gap: 10px;"><i class="fa-solid fa-pen"></i> Edit</button>
+        <button class="action-btn" id="delete-btn" onclick="deleteMsg()" style="background: #1f2937; color: #ff4d4d; border: none; padding: 12px; border-radius: 8px; font-size: 16px; text-align: left; display: flex; gap: 10px;"><i class="fa-solid fa-trash"></i> Delete</button>
+    </div>
+</div>
+
+<!-- Hidden Forms for Edit/Delete -->
+<form id="delete-form" method="POST" style="display:none;"></form>
+<form id="edit-form" method="POST" style="display:none;"><textarea name="content" id="edit-content"></textarea></form>
+
+<div class="chat-input-bar">
+    <form method="POST" action="/send_group_message/{{ group.id }}" enctype="multipart/form-data" class="chat-input-form" id="main-chat-form">
+        <input type="hidden" name="reply_to_id" id="reply-input-id" value="">
+        <input type="file" name="group_image" accept="image/*" id="group-img" style="display: none;" onchange="this.form.submit()">
+        <label for="group-img" style="color: #a0aec0; font-size: 20px; cursor: pointer; padding: 5px;"><i class="fa-solid fa-paperclip"></i></label>
+        <input type="text" name="content" id="main-input" placeholder="Message {{ group.name }}..." autocomplete="off">
+        <button type="submit" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+    </form>
+</div>
+
+<script>
+    function openLightbox(src) {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox').style.display = 'flex';
+    }
+
+    let pressTimer;
+    let selectedMsgId = null;
+    let selectedMsgContent = "";
+    let isMyMsg = false;
+    let isAdmin = false;
+
+    function startPressTimer(e) {
+        const target = e.currentTarget;
+        pressTimer = setTimeout(() => {
+            selectedMsgId = target.getAttribute('data-id');
+            selectedMsgContent = target.getAttribute('data-content');
+            isMyMsg = target.getAttribute('data-is-mine') === 'True';
+            isAdmin = target.getAttribute('data-is-admin') === 'True';
+            
+            document.getElementById('edit-btn').style.display = isMyMsg ? 'flex' : 'none';
+            document.getElementById('delete-btn').style.display = (isMyMsg || isAdmin) ? 'flex' : 'none';
+            
+            document.getElementById('action-overlay').style.display = 'flex';
+        }, 600);
+    }
+
+    function cancelPressTimer() { clearTimeout(pressTimer); }
+    function closeMenu() { document.getElementById('action-overlay').style.display = 'none'; }
+
+    function replyToMsg() {
+        document.getElementById('main-input').value = `@${isMyMsg ? 'Me' : 'User'} `;
+        document.getElementById('main-input').focus();
+        document.getElementById('main-chat-form').action = `/send_group_reply/{{ group.id }}/${selectedMsgId}`;
+        closeMenu();
+    }
+
+    function editMsg() {
+        let newText = prompt("Edit your message:", selectedMsgContent);
+        if (newText !== null && newText !== selectedMsgContent) {
+            let form = document.getElementById('edit-form');
+            form.action = `/edit_group_msg/${selectedMsgId}`;
+            document.getElementById('edit-content').value = newText;
+            form.submit();
+        }
+        closeMenu();
+    }
+
+    function deleteMsg() {
+        if (confirm("Delete this message?")) {
+            let form = document.getElementById('delete-form');
+            form.action = `/delete_group_msg/${selectedMsgId}`;
+            form.submit();
+        }
+        closeMenu();
+    }
+</script>
+{% endblock %}
+ 

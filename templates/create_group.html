@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block nav_left %}
+    <a href="/groups" style="color: #00ffaa; text-decoration: none; margin-right: 15px; font-size: 20px;"><i class="fa-solid fa-arrow-left"></i></a>
+    <span style="font-size: 20px; font-weight: bold; color: #e1e1e1;">New Group</span>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 20px;">
+    
+    <form method="POST" action="/create_group" style="background: #111827; padding: 20px; border-radius: 10px; border: 1px solid #2d3748;">
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; color: #a0aec0; font-size: 14px; font-weight: bold; margin-bottom: 8px;">Group Name</label>
+            <input type="text" name="group_name" required placeholder="e.g., Gold Traders Only" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2d3748; background: #0a0e17; color: white; font-size: 16px; outline: none;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; color: #a0aec0; font-size: 14px; font-weight: bold; margin-bottom: 8px;">Select Members</label>
+            
+            <div style="max-height: 300px; overflow-y: auto; background: #0a0e17; border-radius: 8px; border: 1px solid #2d3748;">
+                {% for u in users %}
+                    <label style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #2d3748; cursor: pointer;">
+                        <!-- Checkbox -->
+                        <input type="checkbox" name="members" value="{{ u.id }}" style="width: 20px; height: 20px; margin-right: 15px; accent-color: #00ffaa;">
+                        
+                        <!-- User Avatar -->
+                        {% if u.avatar_path %}
+                            <img src="/{{ u.avatar_path }}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; margin-right: 12px;">
+                        {% else %}
+                            <div style="width: 35px; height: 35px; border-radius: 50%; background: #00ffaa; color: #0a0e17; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; margin-right: 12px;">{{ u.username[0] | upper }}</div>
+                        {% endif %}
+                        
+                        <!-- Username -->
+                        <span style="font-size: 16px; color: #e1e1e1;">@{{ u.username }}</span>
+                    </label>
+                {% else %}
+                    <p style="padding: 15px; color: #a0aec0; font-size: 14px;">No other users found to add.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" style="width: 100%; background: #00ffaa; color: #0a0e17; border: none; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer;">
+            <i class="fa-solid fa-users"></i> Create Group
+        </button>
+    </form>
+
+</div>
+{% endblock %}

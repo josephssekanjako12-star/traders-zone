@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Register - Traders Zone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0a0e17; color: #e1e1e1; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { width: 100%; max-width: 400px; }
+        .form-box { background-color: #111827; padding: 30px; border-radius: 15px; border: 1px solid #2d3748; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
+        .toggle-btns { display: flex; gap: 10px; margin-bottom: 30px; background: #0a0e17; padding: 5px; border-radius: 10px; }
+        .toggle-btns a { flex: 1; text-align: center; padding: 10px; text-decoration: none; font-weight: bold; border-radius: 8px; color: #a0aec0; }
+        .toggle-btns a.active { background: #00ffaa; color: #0a0e17; }
+
+        h2 { text-align: center; color: #00ffaa; margin-bottom: 25px; }
+        .form-group { margin-bottom: 15px; position: relative; }
+        .form-group label { display: block; margin-bottom: 5px; color: #a0aec0; font-size: 14px; }
+        .form-group input { width: 100%; padding: 12px 40px 12px 15px; border-radius: 8px; border: 1px solid #2d3748; background-color: #0a0e17; color: white; font-size: 16px; }
+        
+        .eye-icon { position: absolute; right: 15px; top: 38px; color: #a0aec0; cursor: pointer; }
+        
+        .btn { width: 100%; background-color: #00ffaa; color: #0a0e17; padding: 14px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 15px; }
+        
+        .error { background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-box">
+            
+            <div class="toggle-btns">
+                <a href="/login">Sign In</a>
+                <a href="/register" class="active">Sign Up</a>
+            </div>
+
+            <h2>Create Account</h2>
+            
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="/register">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required placeholder="johndoe123">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" required placeholder="john@example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" id="pwd1" required placeholder="Create a strong password">
+                    <i class="fa-solid fa-eye eye-icon" id="eye1" onclick="togglePwd('pwd1', 'eye1')"></i>
+                </div>
+                
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" name="confirm_password" id="pwd2" required placeholder="Repeat your password">
+                    <i class="fa-solid fa-eye eye-icon" id="eye2" onclick="togglePwd('pwd2', 'eye2')"></i>
+                </div>
+
+                <button type="submit" class="btn">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function togglePwd(inputId, iconId) {
+            const pwd = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>
+            

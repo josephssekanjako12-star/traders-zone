@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block nav_left %}
+    <div style="display: flex; align-items: center;">
+        <a href="/chats" style="color: #00ffaa; text-decoration: none; margin-right: 15px; font-size: 20px;"><i class="fa-solid fa-arrow-left"></i></a>
+        
+        <!-- Add Avatar Here -->
+        {% if them.avatar_path %}
+            <img src="/{{ them.avatar_path }}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; margin-right: 10px;">
+        {% else %}
+            <div style="width: 35px; height: 35px; border-radius: 50%; background: #00ffaa; color: #0a0e17; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; margin-right: 10px;">
+                {{ them.username[0] | upper }}
+            </div>
+        {% endif %}
+        
+        <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 16px; font-weight: bold; color: #e1e1e1; line-height: 1.2;">@{{ them.username }}</span>
+            {% if is_online %}
+                <span style="font-size: 11px; color: #00ffaa;">b            {% else %}
+                <span style="font-size: 11px; color: #a0aec0;">Offline</span>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .bottom-nav { display: none !important; }
+    body { padding-bottom: 90px; }
+    .chat-container { max-width: 600px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; }
+    
+    .message-row { display: flex; margin-bottom: 15px; align-items: flex-end; gap: 8px; }
+    .message-row.me { flex-direction: row-reverse; }
+    
+    .chat-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-bottom: 5px; }
+    .chat-avatar-text { width: 30px; height: 30px; border-radius: 50%; background: #00ffaa; color: #0a0e17; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; flex-shrink: 0; margin-bottom: 5px; }
+    
+    .bubble-wrapper { display: flex; flex-direction: column; max-width: 75%; }
+    .message-row.me .bubble-wrapper { align-items: flex-end; }
+
+    .bubble {
+        padding: 10px 14px; border-radius: 15px; font-size: 15px; line-height: 1.4; 
+        word-wrap: break-word; position: relative; user-select: none; -webkit-user-select: none;
+    }
+    .bubble.me { background-color: #005c4b; color: white; border-bottom-right-radius: 2px; }
+    .bubble.them { background-color: #202c33; color: white; border-bottom-left-radius: 2px; }
+    
+    /* Reply Box inside bubble */
+    .reply-preview { background: rgba(0,0,0,0.2); border-left: 3px solid #00ffaa; padding: 5px 10px; border-radius: 5px; margin-bottom: 5px; font-size: 12px; color: #a0aec0; }
+    
+    .msg-text { margin-bottom: 5px; }
+    .msg-img-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 5px; margin-top: 5px; }
+    .msg-img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #4a5568; cursor: pointer; }
+    
+    .msg-meta { display: flex; justify-content: flex-end; align-items: center; gap: 5px; font-size: 10px; color: #a0aec0; margin-top: 5px; }
+    .tick-read { color: #53bdeb; }
+    
+    /* Action Menu overlay */
+    .action-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; }
+    .action-menu { background: #111827; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; gap: 15px; width: 80%; max-width: 300px; border: 1px solid #2d3748; }
+    .action-btn { background: #1f2937; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; }
+    .action-btn:hover { background: #374151; }
+    .delete-btn { color: #ff4d4d; }
+    
+    /* Input Bar */
+    .chat-input-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #0a0e17; padding: 10px 15px; border-top: 1px solid #2d3748; z-index: 1000; }
+    .chat-input-form { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; align-items: center; }
+    .chat-input-form input[type="text"] { flex: 1; height: 45px; padding: 0 15px; border-radius: 20px; border: 1px solid #2d3748; background-color: #111827; color: white; font-size: 16px; outline: none; }
+    .plus-btn { color: #a0aec0; font-size: 22px; cursor: pointer; width: 35px; text-align: center; }
+    .send-btn { background-color: #00ffaa; color: #0a0e17; width: 45px; height: 45px; border-radius: 50%; border: none; font-size: 16px; cursor: pointer; }
+    .bubble {
+        padding: 10px 14px; border-radius: 15px; font-size: 15px; line-height: 1.4; 
+        word-wrap: break-word; position: relative; 
+        
+        /* ADD THESE LINES */
+        user-select: none; 
+        -webkit-user-select: none; 
+        -webkit-touch-callout: none; 
+    }
+</style>
+<div class="chat-container">
+    {% set ns = namespace(prev_date="") %}
+     {% for msg in messages %}
+        {% set current_date = msg.timestamp | local_time('%Y-%m-%d') %}
+        {% if current_date != ns.prev_date %}
+            <div style="text-align: center; margin: 20px 0;">
+                <span style="background: #1f2c34; color: #a0aec0; font-size: 12px; padding: 5px 12px; border-radius: 15px; font-weight: bold;">
+                    {{ msg.timestamp | local_time('%B %d, %Y') }}
+                </span>
+            </div>
+            {% set ns.prev_date = current_date %}
+        {% endif %}
+
+        <div class="message-row {% if msg.sender_id == my_id %}me{% else %}them{% endif %}">
+            
+            <!-- Avatar -->
+            {% if msg.sender_avatar %}
+                <img src="/{{ msg.sender_avatar }}" class="chat-avatar">
+            {% else %}
+                <div class="chat-avatar-text">{{ msg.sender_id }}</div>
+            {% endif %}
+
+            <div class="bubble-wrapper">
+                <div class="bubble {% if msg.sender_id == my_id %}me{% else %}them{% endif %}" 
+                     data-id="{{ msg.id }}" 
+                     data-content="{{ msg.content | escape }}" 
+                     data-is-mine="{{ msg.sender_id == my_id }}"
+                     onmousedown="startPressTimer(event)" 
+                     ontouchstart="startPressTimer(event)"
+                     onmouseup="cancelPressTimer()" 
+                     onmouseleave="cancelPressTimer()" 
+                     ontouchend="cancelPressTimer()">
+                    
+                    <!-- 1. Main Message Text -->
+                    {% if msg.content %}<div class="msg-text">{{ msg.content }}</div>{% endif %}
+                    
+                    <!-- 2. Main Message Images -->
+                    {% if msg.image_paths %}
+                        <div class="msg-image-grid">
+                            {% for path in msg.image_paths.split(',') %}<img src="/{{ path }}" class="msg-img" onclick="openLightbox('/{{ path }}')">{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- 3. Reply Preview -->
+                    {% if msg.reply_to_id %}
+                        <div class="reply-preview" style="background: rgba(0,0,0,0.2); border-left: 3px solid #00ffaa; padding: 5px 10px; border-radius: 5px; margin-top: 10px; font-size: 12px; color: #a0aec0;">
+                            {% if msg.reply_images %}
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <i class="fa-solid fa-camera"></i> Photo
+                                </div>
+                            {% endif %}
+                            {% if msg.reply_content %}
+                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ msg.reply_content }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 4. Timestamp & Ticks (ONLY INSIDE THE BUBBLE) -->
+                    <div class="msg-meta">
+                        {% if msg.is_edited %}<span style="font-size:10px; font-style:italic; margin-right:5px;">(edited)</span>{% endif %}
+                        <!-- Changed to show ONLY time using local_time filter -->
+                        {{ msg.timestamp | local_time('%H:%M') }}
+                        {% if msg.sender_id == my_id %}
+                            {% if msg.is_read %}<i class="fa-solid fa-check-double tick-icon tick-read"></i>{% else %}<i class="fa-solid fa-check tick-icon"></i>{% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Hidden Forms for Actions -->
+<form id="delete-form" method="POST" style="display:none;"><input type="hidden" name="_method" value="DELETE"></form>
+<form id="edit-form" method="POST" style="display:none;"><textarea name="content" id="edit-content"></textarea></form>
+
+<!-- Long Press Action Menu -->
+<div id="action-overlay" class="action-overlay" onclick="closeMenu()">
+    <div class="action-menu" onclick="event.stopPropagation()">
+        <button class="action-btn" onclick="replyToMsg()"><i class="fa-solid fa-reply"></i> Reply</button>
+        <button class="action-btn" id="edit-btn" onclick="editMsg()"><i class="fa-solid fa-pen"></i> Edit</button>
+        <button class="action-btn delete-btn" id="delete-btn" onclick="deleteMsg()"><i class="fa-solid fa-trash"></i> Delete</button>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; justify-content:center; align-items:center;" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="" style="max-width:100%; max-height:90%;">
+</div>
+
+<!-- Input Bar -->
+<div class="chat-input-bar">
+    <form method="POST" action="/send_message/{{ them.username }}" class="chat-input-form" enctype="multipart/form-data" id="chat-form">
+        <input type="hidden" name="reply_to_id" id="reply-input-id" value="">
+        
+        <input type="file" name="images" id="chat-images" accept="image/*" multiple style="display: none;" onchange="showPreview()">
+        
+        <label for="chat-images" class="plus-btn"><i class="fa-solid fa-plus"></i></label>
+        
+        <input type="text" name="content" id="main-input" placeholder="Type a message...">
+        
+        <button type="submit" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+    </form>
+    
+    <div id="image-preview" style="display: none; max-width: 600px; margin: 10px auto 0; gap: 10px; overflow-x: auto;"></div>
+</div>
+
+<script>
+    let pressTimer;
+    let selectedMsgId = null;
+    let selectedMsgContent = "";
+    let isMyMsg = false;
+
+    function startPressTimer(e) {
+        const target = e.currentTarget;
+        pressTimer = setTimeout(() => {
+            selectedMsgId = target.getAttribute('data-id');
+            selectedMsgContent = target.getAttribute('data-content');
+            isMyMsg = target.getAttribute('data-is-mine') === 'True';
+            
+            // Only show Edit/Delete if it's my message
+            document.getElementById('edit-btn').style.display = isMyMsg ? 'flex' : 'none';
+            document.getElementById('delete-btn').style.display = isMyMsg ? 'flex' : 'none';
+            
+            document.getElementById('action-overlay').style.display = 'flex';
+        }, 600); // 600ms hold
+    }
+
+    function cancelPressTimer() { clearTimeout(pressTimer); }
+
+    function closeMenu() { document.getElementById('action-overlay').style.display = 'none'; }
+
+    function replyToMsg() {
+        document.getElementById('main-input').value = `@${isMyMsg ? 'Me' : '{{ them.username }}'} `;
+        document.getElementById('reply-input-id').value = selectedMsgId;
+        document.getElementById('main-input').focus();
+        closeMenu();
+    }
+
+    function editMsg() {
+        let newText = prompt("Edit your message:", selectedMsgContent);
+        if (newText !== null && newText !== selectedMsgContent) {
+            let form = document.getElementById('edit-form');
+            form.action = `/edit_message/${selectedMsgId}`;
+            document.getElementById('edit-content').value = newText;
+            form.submit();
+        }
+        closeMenu();
+    }
+
+    function deleteMsg() {
+        if (confirm("Delete this message?")) {
+            let form = document.getElementById('delete-form');
+            form.action = `/delete_message/${selectedMsgId}`;
+            form.submit();
+        }
+        closeMenu();
+    }
+
+    function openLightbox(src) {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox').style.display = 'flex';
+    }
+
+    function showPreview() {
+        const input = document.getElementById('chat-images');
+        const preview = document.getElementById('image-preview');
+        preview.innerHTML = ''; 
+        if (input.files.length > 0) {
+            preview.style.display = 'flex';
+            for (let i = 0; i < input.files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.width = '60px'; img.style.height = '60px';
+                    img.style.borderRadius = '5px'; img.style.objectFit = 'cover';
+                    preview.appendChild(img);
+                }
+                reader.readAsDataURL(input.files[i]);
+            }
+        } else { preview.style.display = 'none'; }
+    }
+</script>
+<script>
+    // Auto-refresh chat messages every 3 seconds
+    setInterval(function() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(html, 'text/html');
+                let newMessages = doc.querySelector('.chat-container').innerHTML;
+                let currentMessages = document.querySelector('.chat-container').innerHTML;
+                
+                // Only update if there are new messages
+                if (newMessages !== currentMessages) {
+                    document.querySelector('.chat-container').innerHTML = newMessages;
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
+            });
+    }, 3000);
+</script>
+{% endblock %}        
+

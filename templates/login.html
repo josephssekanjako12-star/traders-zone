@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - Traders Zone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0a0e17; color: #e1e1e1; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { width: 100%; max-width: 400px; padding: 20px; }
+        .form-box { background-color: #111827; padding: 30px; border-radius: 15px; border: 1px solid #2d3748; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
+        .toggle-btns { display: flex; gap: 10px; margin-bottom: 30px; background: #0a0e17; padding: 5px; border-radius: 10px; }
+        .toggle-btns a { flex: 1; text-align: center; padding: 10px; text-decoration: none; font-weight: bold; border-radius: 8px; color: #a0aec0; }
+        .toggle-btns a.active { background: #00ffaa; color: #0a0e17; }
+
+        h2 { text-align: center; color: #00ffaa; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-group label { display: block; margin-bottom: 8px; color: #a0aec0; font-size: 14px; }
+        .form-group input { width: 100%; padding: 12px 40px 12px 15px; border-radius: 8px; border: 1px solid #2d3748; background-color: #0a0e17; color: white; font-size: 16px; }
+        
+        .eye-icon { position: absolute; right: 15px; top: 40px; color: #a0aec0; cursor: pointer; }
+        
+        .btn { width: 100%; background-color: #00ffaa; color: #0a0e17; padding: 14px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        
+        .error { background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-size: 14px; }
+        
+        .forgot-link { display: block; text-align: center; margin-top: 15px; color: #a0aec0; text-decoration: none; font-size: 14px; }
+        .forgot-link:hover { color: #00ffaa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-box">
+            
+            <div class="toggle-btns">
+                <a href="/login" class="active">Sign In</a>
+                <a href="/register">Sign Up</a>
+            </div>
+
+            <h2>Welcome Back</h2>
+            
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="/login">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required placeholder="Enter your username">
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" id="password-field" required placeholder="Enter your password">
+                    <i class="fa-solid fa-eye eye-icon" id="eye-icon" onclick="togglePassword()"></i>
+                </div>
+                
+                <button type="submit" class="btn">Sign In</button>
+            </form>
+            
+            <a href="/forgot_password" class="forgot-link">Forgot Password?</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const pwd = document.getElementById('password-field');
+            const icon = document.getElementById('eye-icon');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>

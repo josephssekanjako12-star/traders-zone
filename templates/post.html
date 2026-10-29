@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Post - Traders Zone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0a0e17; color: #e1e1e1; font-family: Arial, sans-serif; padding-bottom: 120px; }
+        
+        /* Navbar */
+        .navbar { background-color: #111827; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3748; position: sticky; top: 0; z-index: 10; }
+        .logo { font-size: 22px; font-weight: bold; color: #00ffaa; text-decoration: none; }
+        .nav-links a { color: #e1e1e1; text-decoration: none; margin-left: 15px; font-size: 14px; }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        
+        /* Main Post Card */
+        .post-card { background-color: #111827; padding: 20px; border-radius: 10px; border: 1px solid #2d3748; margin-bottom: 20px; }
+        .post-header { display: flex; align-items: center; margin-bottom: 15px; }
+        .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #2d3748; }
+        .avatar-text { width: 45px; height: 45px; border-radius: 50%; background-color: #00ffaa; color: #0a0e17; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 12px; text-transform: uppercase; }
+        .user-details { display: flex; flex-direction: column; }
+        .username { color: #00ffaa; font-weight: bold; font-size: 16px; }
+        .timestamp { color: #a0aec0; font-size: 12px; }
+        
+        /* Post Content */
+        .post-content { line-height: 1.6; font-size: 16px; white-space: pre-wrap; margin-bottom: 15px; }
+        .post-image { width: 100%; border-radius: 10px; margin-bottom: 15px; border: 1px solid #2d3748; }
+        .post-actions { display: flex; gap: 25px; border-top: 1px solid #2d3748; padding-top: 15px; color: #a0aec0; }
+        .action-btn { display: flex; align-items: center; gap: 8px; font-size: 14px; text-decoration: none; color: inherit; }
+        
+        /* Comments Section */
+        .comment-section h3 { margin-bottom: 15px; color: #a0aec0; border-bottom: 1px solid #2d3748; padding-bottom: 10px; }
+        .comment { padding: 15px 0; border-bottom: 1px solid #2d3748; }
+        .comment-text { font-size: 15px; margin-top: 8px; margin-left: 52px; line-height: 1.5; }
+        .comment-img { max-width: calc(100% - 52px); border-radius: 8px; margin-top: 10px; margin-left: 52px; border: 1px solid #2d3748; }
+        .sticker { font-size: 32px; display: block; margin-top: 5px; margin-left: 52px; }
+        
+        /* Sticky Comment Bar */
+        .add-comment { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #0a0e17; padding: 10px 15px; border-top: 1px solid #2d3748; z-index: 1000; }
+        .comment-form-inner { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+        .sticker-picker { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 8px; }
+        .sticker-picker label { font-size: 24px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<!-- Top Navbar -->
+    <div class="navbar">
+        <div style="display: flex; align-items: center;">
+            <a href="/" style="color: #00ffaa; text-decoration: none; margin-right: 15px; font-size: 20px;"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="/" class="logo">Traders Zone</a>
+        </div>
+        <div class="nav-links">
+            <!-- Replaced Logout with Search Icon -->
+            <a href="#" style="font-size: 20px; color: #a0aec0;"><i class="fa-solid fa-magnifying-glass"></i></a>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- Main Post -->
+        <div class="post-card">
+            <div class="post-header">
+                {% if post.avatar_path %}
+                    <img src="/{{ post.avatar_path }}" class="avatar-img">
+                {% else %}
+                    <div class="avatar-text">{{ post.username[0] }}</div>
+                {% endif %}
+                <div class="user-details">
+                    <div class="username">@{{ post.username }}</div>
+                    <div class="timestamp">{{ post.timestamp | local_time('%b %d, %H:%M') }}</div>
+                </div>
+            </div>
+            
+            <div class="post-content">{{ post.content }}</div>
+            
+            {% if post.image_path %}
+                <img src="/{{ post.image_path }}" class="post-image">
+            {% endif %}
+            
+            <div class="post-actions">
+                <a href="/like/{{ post.id }}" class="action-btn"><i class="fa-solid fa-heart"></i> {{ post.like_count }} Likes</a>
+                <span class="action-btn"><i class="fa-solid fa-eye"></i> {{ post.views }} Views</span>
+            </div>
+        </div>
+
+        <!-- Comments List -->
+        <div class="comment-section">
+            <h3>Comments ({{ comments|length }})</h3>
+            
+            {% for comment in comments %}
+            <div class="comment">
+                <div class="post-header" style="margin-bottom: 0;">
+                    {% if comment.avatar_path %}
+                        <img src="/{{ comment.avatar_path }}" class="avatar-img" style="width: 40px; height: 40px;">
+                    {% else %}
+                        <div class="avatar-text" style="width: 40px; height: 40px; font-size: 16px;">{{ comment.username[0] }}</div>
+                    {% endif %}
+                    <div class="user-details">
+                        <div class="username" style="font-size: 15px;">@{{ comment.username }}</div>
+                        <div class="timestamp">{{ comment.timestamp | local_time('%b %d, %H:%M') }}</div>
+                    </div>
+                </div>
+                
+                {% if comment.text_content %}
+                    <p class="comment-text">{{ comment.text_content }}</p>
+                {% endif %}
+                {% if comment.image_path %}
+                    <img src="/{{ comment.image_path }}" class="comment-img">
+                {% endif %}
+                {% if comment.sticker %}
+                    <span class="sticker">{{ comment.sticker }}</span>
+                {% endif %}
+                
+                <div style="margin-left: 52px; margin-top: 10px; display: flex; gap: 25px; color: #a0aec0; font-size: 13px;">
+                    <a href="/like_comment/{{ comment.id }}" style="color: #a0aec0; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-regular fa-heart"></i> {{ comment.like_count }}
+                    </a>
+                    <span style="cursor: pointer;" onclick="replyTo('{{ comment.username }}')"><i class="fa-solid fa-reply"></i> Reply</span>
+                </div>
+            </div>
+            {% else %}
+            <p style="color:#a0aec0; font-size:14px;">No comments yet. Be the first!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sticky Add Comment Form -->
+    {% if session.get('user_id') %}
+    <div class="add-comment">
+        <form method="POST" action="/add_comment/{{ post.id }}" enctype="multipart/form-data" class="comment-form-inner">
+            
+            <input type="hidden" name="sticker" id="sticker-input" value="">
+            <div class="sticker-picker">
+                <span class="sticker-btn" onclick="pickSticker(this, 'p                <span class="sticker-btn" onclick="pickSticker(this, 'p                <span class="sticker-btn" onclick="pickSticker(this, 'p                <span class="sticker-btn" onclick="pickSticker(this, 'p                <span class="sticker-btn" onclick="pickSticker(this, 'p                <span class="sticker-btn" onclick="pickSticker(this, 'p            </div>
+
+            <div style="display: table; width: 100%; table-layout: fixed;">
+                <div style="display: table-cell; width: 35px; vertical-align: middle; text-align: center;">
+                    <label for="file-upload" style="color: #a0aec0; font-size: 20px; cursor: pointer; display: block;"><i class="fa-solid fa-paperclip"></i></label>
+                    <input type="file" name="comment_image" accept="image/*" id="file-upload" style="display: none;">
+                </div>
+                <div style="display: table-cell; vertical-align: middle; padding: 0 10px; width: 100%;">
+                    <input type="text" name="text_content" id="reply-input" placeholder="Write a comment..." style="width: 100%; height: 42px; padding: 0 15px; border-radius: 20px; border: 1px solid #2d3748; background-color: #111827; color: white; font-size: 16px; outline: none;">
+                </div>
+                <div style="display: table-cell; width: 50px; vertical-align: middle; text-align: center;">
+                    <button type="submit" style="background-color: #00ffaa; color: #0a0e17; width: 42px; height: 42px; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; font-size: 16px; margin: 0 auto;"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <script>
+        function pickSticker(element, emoji) {
+            document.getElementById('sticker-input').value = emoji;
+            let stickers = document.querySelectorAll('.sticker-btn');
+            stickers.forEach(s => s.style.backgroundColor = 'transparent');
+            element.style.backgroundColor = '#2d3748';
+            element.style.borderRadius = '5px';
+        }
+        function replyTo(username) {
+            const input = document.getElementById('reply-input');
+            input.value = '@' + username + ' ';
+            input.focus();
+        }
+    </script>
+</body>
+</html>

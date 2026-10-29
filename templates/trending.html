@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block nav_left %}
+    <a href="/" style="color: #00ffaa; text-decoration: none; margin-right: 15px; font-size: 20px;"><i class="fa-solid fa-arrow-left"></i></a>
+    <span style="font-size: 20px; font-weight: bold; color: #e1e1e1;">Trending Topics</span>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div style="background: #111827; border-radius: 10px; border: 1px solid #2d3748; padding: 20px;">
+        {% for tag, count in trending %}
+              <a href="/hashtag/{{ tag | replace('#', '') }}" style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #2d3748; text-decoration: none; color: inherit;">
+                <span style="color: #00ffaa; font-weight: bold; font-size: 16px;">{{ tag }}</span>
+                <span style="color: #a0aec0; font-size: 14px;">{{ count }} posts</span>
+            </a>
+        {% else %}
+            <p style="color: #a0aec0; text-align: center;">No trending topics yet. Start posting with #hashtags!</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
