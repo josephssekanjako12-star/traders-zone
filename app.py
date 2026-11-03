@@ -1091,7 +1091,7 @@ def reset_password():
 # --- AUTO INITIALIZE DATABASE ON RENDER ---
 if os.environ.get('RENDER'):
     # Ensure the data directory exists
-    os.makedirs('/data', exist_ok=True)
+    os.makedirs('/tmp', exist_ok=True)
     
     with app.app_context():
         try:
