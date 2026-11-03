@@ -19,16 +19,14 @@ def allowed_file(filename):
 app = Flask(__name__)
 app.secret_key = 'traders_zone_secret_key_2026'
 if os.environ.get('RENDER'):
-    # On Render, use the persistent disk for uploads
-    app.config['UPLOAD_FOLDER'] = '/data/uploads'
-    os.makedirs('/data/uploads', exist_ok=True)
+    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+    os.makedirs('/tmp/uploads', exist_ok=True)
 else:
-    # On your iPhone (iSH)
     app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 def get_db_connection():
-    # Use /data folder on Render, or local folder on iSH
-    db_path = '/data/traderszone.db' if os.environ.get('RENDER') else 'traderszone.db'
+    # Use /tmp on Render (ephemeral), or local folder on iSH
+    db_path = '/tmp/traderszone.db' if os.environ.get('RENDER') else 'traderszone.db'
     conn = sqlite3.connect(db_path, timeout=20)
     conn.row_factory = sqlite3.Row 
     return conn
