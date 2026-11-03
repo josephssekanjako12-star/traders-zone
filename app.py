@@ -19,14 +19,14 @@ def allowed_file(filename):
 app = Flask(__name__)
 app.secret_key = 'traders_zone_secret_key_2026'
 if os.environ.get('RENDER'):
-    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
-    os.makedirs('/tmp/uploads', exist_ok=True)
+    app.config['UPLOAD_FOLDER'] = '/home/Archer/traderszone/static/uploads'
+    os.makedirs('/home/Archer/traderszone/static/uploads', exist_ok=True)
 else:
-    app.config['UPLOAD_FOLDER'] = 'static/uploads'
+    app.config['UPLOAD_FOLDER'] = '/home/Archer/traderszone/static/uploads'
 
 def get_db_connection():
-    # Use /tmp on Render (ephemeral), or local folder on iSH
-    db_path = '/tmp/traderszone.db' if os.environ.get('RENDER') else 'traderszone.db'
+    # On PythonAnywhere, use an absolute path in your home directory
+    db_path = '/home/Archer/traderszone.db'
     conn = sqlite3.connect(db_path, timeout=20)
     conn.row_factory = sqlite3.Row 
     return conn
@@ -1120,4 +1120,3 @@ if __name__ == '__main__':
 
     import os
     port = int(os.environ.get('PORT', 8080)) # Use PORT env var or 8080 locally
-    app.run(host='0.0.0.0', port=port)
