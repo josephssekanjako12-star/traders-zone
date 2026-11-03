@@ -1114,7 +1114,6 @@ if os.environ.get('RENDER'):
             print("Database initialized successfully on Render!")
         except Exception as e:
             print(f"Database initialization error: {e}")
--
 
 if __name__ == '__main__':
     # ... existing code ...
