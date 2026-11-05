@@ -1,3 +1,6 @@
+import time
+import requests
+import threading
 import random # Add this for the OTP
 from flask import Flask, render_template, request, redirect, url_for, session,jsonify
 # ... (keep other imports)
@@ -1115,8 +1118,121 @@ if os.environ.get('RENDER'):
         except Exception as e:
             print(f"Database initialization error: {e}")
 
-if __name__ == '__main__':
-    # ... existing code ...
+# --- TRADING BOT STATE ---
+BOT_STATE = {
+    "status": "Scanning",
+    "active_coin": "None",
+    "usdt_balance": 100.0,
+    "coin_balance": 0.0,
+    "start_price": 0.0,
+    "stop_loss": 0.0,
+    "grids": [],
+    "logs": ["Bot initialized. Waiting for signal..."],
+    "last_price": 0.0
+}
 
-    import os
-    port = int(os.environ.get('PORT', 8080)) # Use PORT env var or 8080 locally
+COINS = ['PEPEUSDT', 'WIFUSDT', 'FLOKIUSDT', 'SHIBUSDT', 'DOGEUSDT', 'SOLUSDT']
+
+def log_event(msg):
+    print(msg)
+    BOT_STATE["logs"].insert(0, msg) # Add to top
+    if len(BOT_STATE["logs"]) > 15:
+        BOT_STATE["logs"].pop() # Keep only last 15
+
+def get_klines(symbol, interval, limit=20):
+    try:
+        url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
+        data = requests.get(url, timeout=5).json()
+        closes = [float(candle[4]) for candle in data]
+        volumes = [float(candle[5]) for candle in data]
+        return closes, volumes
+    except Exception:
+        return None, None
+
+def run_bot_tick():
+    # 1. If we are scanning for a signal
+    if BOT_STATE["status"] == "Scanning":
+        for coin in COINS:
+            closes, volumes = get_klines(coin, '15m')
+            if not closes or len(closes) < 20:
+                continue
+                
+            sma = sum(closes) / len(closes)
+            avg_vol = sum(volumes[:-1]) / len(volumes[:-1])
+            current_price = closes[-1]
+            current_vol = volumes[-1]
+            
+            if current_price > sma and current_vol > (avg_vol * 1.5):
+                # SIGNAL MET!
+                BOT_STATE["status"] = "Trading"
+                BOT_STATE["active_coin"] = coin
+                BOT_STATE["start_price"] = current_price
+                BOT_STATE["last_price"] = current_price
+                BOT_STATE["stop_loss"] = current_price * 0.85
+                
+                step = (current_price * 1.10 - current_price * 0.90) / 5
+                BOT_STATE["grids"] = [current_price * 0.90 + (i * step) for i in range(6)]
+                
+                log_event(f"[SIGNAL MET] {coin} trending up with high volume.")
+                log_event(f"[GRID START] {coin} at {current_price:.8f}")
+                return # Exit tick early
+                
+    # 2. If we are actively trading a grid
+    elif BOT_STATE["status"] == "Trading":
+        coin = BOT_STATE["active_coin"]
+        closes, _ = get_klines(coin, '15m', limit=1)
+        if not closes: return
+        
+        current_price = closes[0]
+        
+        # Stop Loss
+        if current_price <= BOT_STATE["stop_loss"]:
+            BOT_STATE["status"] = "Scanning"
+            BOT_STATE["active_coin"] = "None"
+            log_event(f"[STOP LOSS] {coin} dropped to {current_price:.8f}. Grid closed.")
+            return
+            
+        # Grid Logic
+        current_zone = 0
+        for i in range(len(BOT_STATE["grids"]) - 1):
+            if BOT_STATE["grids"][i] <= current_price <= BOT_STATE["grids"][i+1]:
+                current_zone = i
+                break
+                
+        last_zone = 0
+        for i in range(len(BOT_STATE["grids"]) - 1):
+            if BOT_STATE["grids"][i] <= BOT_STATE["last_price"] <= BOT_STATE["grids"][i+1]:
+                last_zone = i
+                break
+                
+        if current_zone < last_zone: # BUY
+            if BOT_STATE["usdt_balance"] >= 10.0:
+                BOT_STATE["usdt_balance"] -= 10.0
+                BOT_STATE["coin_balance"] += (10.0 / current_price)
+                log_event(f"[BUY] {coin} at {current_price:.8f}")
+        elif current_zone > last_zone: # SELL
+            if BOT_STATE["coin_balance"] > 0:
+                BOT_STATE["usdt_balance"] += 10.0
+                BOT_STATE["coin_balance"] -= (10.0 / current_price)
+                log_event(f"[SELL] {coin} at {current_price:.8f}")
+                
+        BOT_STATE["last_price"] = current_price
+
+
+@app.route('/trading_bot')
+def trading_bot():
+    # Removed the session check so anyone can view it
+    return render_template('trading_bot.html')
+
+@app.route('/api/bot_status')
+def bot_status():
+    # Trigger one tick of the bot every time the page polls for data
+    try:
+        run_bot_tick()
+    except Exception as e:
+        print(f"Bot Tick Error: {e}")
+    return jsonify(BOT_STATE)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)
