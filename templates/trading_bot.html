@@ -26,6 +26,11 @@
         <p style="color: #a0aec0; font-size: 14px;">Current Price: <span id="current-price" style="color: white;">0.00</span></p>
     </div>
 
+    <div id="grid-display" style="display: none; margin-top: 15px;">
+    <p style="color: #a0aec0; font-size: 14px; margin-bottom: 5px;">Active Grid Lines:</p>
+    <div id="grid-lines" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+    </div>
+
     <!-- Logs -->
     <div style="background: #111827; padding: 20px; border-radius: 10px; border: 1px solid #2d3748;">
         <h3 style="color: #e1e1e1; margin-bottom: 15px;">Bot Activity Log</h3>
@@ -63,6 +68,24 @@
                 });
             });
     }
+                 // Add this inside the fetch .then() block
+if (data.status === "Trading" && data.grids.length > 0) {
+    document.getElementById('grid-display').style.display = 'block';
+    let gridContainer = document.getElementById('grid-lines');
+    gridContainer.innerHTML = '';
+    data.grids.forEach(price => {
+        let span = document.createElement('span');
+        span.style.background = "#111827";
+        span.style.padding = "5px 10px";
+        span.style.borderRadius = "5px";
+        span.style.border = "1px solid #2d3748";
+        span.style.fontSize = "12px";
+        span.innerText = price.toFixed(8);
+        gridContainer.appendChild(span);
+    });
+} else {
+    document.getElementById('grid-display').style.display = 'none';
+}
 
     updateDashboard();
     setInterval(updateDashboard, 5000);
