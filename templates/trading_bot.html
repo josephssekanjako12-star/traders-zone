@@ -45,12 +45,15 @@
         fetch('/api/bot_status')
             .then(res => res.json())
             .then(data => {
+                // Check if data exists before trying to use it
+                if (!data || !data.usdt_balance) return; 
+                
                 document.getElementById('usdt-bal').innerText = '$' + data.usdt_balance.toFixed(2);
                 document.getElementById('coin-bal').innerText = data.coin_balance.toFixed(4);
                 document.getElementById('bot-status').innerText = data.status;
                 document.getElementById('active-coin').innerText = data.active_coin;
                 document.getElementById('current-price').innerText = data.last_price ? data.last_price.toFixed(8) : "0.00";
-                
+
                 // Change status color based on mode
                 if(data.status === "Trading") {
                     document.getElementById('bot-status').style.color = "#00ffaa";
@@ -66,27 +69,28 @@
                     div.innerText = "> " + log;
                     logContainer.appendChild(div);
                 });
+
+                // p                if (data.status === "Trading" && data.grids.length > 0) {
+                    document.getElementById('grid-display').style.display = 'block';
+                    let gridContainer = document.getElementById('grid-lines');
+                    gridContainer.innerHTML = '';
+                    data.grids.forEach(price => {
+                        let span = document.createElement('span');
+                        span.style.background = "#111827";
+                        span.style.padding = "5px 10px";
+                        span.style.borderRadius = "5px";
+                        span.style.border = "1px solid #2d3748";
+                        span.style.fontSize = "12px";
+                        span.innerText = price.toFixed(8);
+                        gridContainer.appendChild(span);
+                    });
+                } else {
+                    document.getElementById('grid-display').style.display = 'none';
+                }
             });
     }
-                 // Add this inside the fetch .then() block
-if (data.status === "Trading" && data.grids.length > 0) {
-    document.getElementById('grid-display').style.display = 'block';
-    let gridContainer = document.getElementById('grid-lines');
-    gridContainer.innerHTML = '';
-    data.grids.forEach(price => {
-        let span = document.createElement('span');
-        span.style.background = "#111827";
-        span.style.padding = "5px 10px";
-        span.style.borderRadius = "5px";
-        span.style.border = "1px solid #2d3748";
-        span.style.fontSize = "12px";
-        span.innerText = price.toFixed(8);
-        gridContainer.appendChild(span);
-    });
-} else {
-    document.getElementById('grid-display').style.display = 'none';
-}
 
+    // Fetch immediately, then every 5 seconds
     updateDashboard();
     setInterval(updateDashboard, 5000);
 </script>
