@@ -1,6 +1,3 @@
-import time
-import requests
-import threading
 import random # Add this for the OTP
 from flask import Flask, render_template, request, redirect, url_for, session,jsonify
 # ... (keep other imports)
