@@ -1,15 +1,16 @@
-import random # Add this for the OTP
-from flask import Flask, render_template, request, redirect, url_for, session,jsonify
-# ... (keep other imports)
-from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, session,jsonify
-import re
-from markupsafe import Markup
-import uuid
-import sqlite3
 import os
+import time
+import requests
+import sqlite3
+import re
+import random
+import uuid
+import threading
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from markupsafe import Markup
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -18,9 +19,10 @@ def allowed_file(filename):
 
 app = Flask(__name__)
 app.secret_key = 'traders_zone_secret_key_2026'
-if os.environ.get('RENDER'):
-    app.config['UPLOAD_FOLDER'] = '/home/Archer/traderszone/static/uploads'
-    os.makedirs('/home/Archer/traderszone/static/uploads', exist_ok=True)
+
+# Absolute path for PythonAnywhere
+app.config['UPLOAD_FOLDER'] = '/home/Archer/traderszone/static/uploads'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 else:
     app.config['UPLOAD_FOLDER'] = '/home/Archer/traderszone/static/uploads'
 
