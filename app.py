@@ -5,7 +5,6 @@ import sqlite3
 import re
 import random
 import uuid
-import threading
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -23,8 +22,6 @@ app.secret_key = 'traders_zone_secret_key_2026'
 # Absolute path for PythonAnywhere
 app.config['UPLOAD_FOLDER'] = '/home/Archer/traderszone/static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-else:
-    app.config['UPLOAD_FOLDER'] = '/home/Archer/traderszone/static/uploads'
 
 def get_db_connection():
     # On PythonAnywhere, use an absolute path in your home directory
