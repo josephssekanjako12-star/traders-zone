@@ -24,7 +24,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def get_db_connection():
     # On PythonAnywhere, use an absolute path in your home directory
-    db_path = '/home/Archer/traderszone.db'
+    db_path = '/home/Archer/traderszone/traderszone.db'
     conn = sqlite3.connect(db_path, timeout=20)
     conn.row_factory = sqlite3.Row 
     return conn
